@@ -1,0 +1,284 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  HUMAS
+  VIEWER
+}
+
+enum TaskStatus {
+  TODO
+  PROGRESS
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum EventStatus {
+  PLANNING
+  READY
+  DONE
+}
+
+enum ContentStatus {
+  DRAFT
+  REVIEW
+  SCHEDULED
+  POSTED
+}
+
+enum ContentPlatform {
+  INSTAGRAM
+  TIKTOK
+  WEBSITE
+  YOUTUBE
+  TWITTER
+  OTHER
+}
+
+enum TemplateCategory {
+  CAPTION
+  PRESS_RELEASE
+  INVITATION
+  LETTER
+  OTHER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  name      String
+  email     String?  @unique
+  password  String
+  role      Role     @default(HUMAS)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks         Task[]          @relation("TaskCreator")
+  assignedTasks Task[]          @relation("TaskAssignee")
+  notes         Note[]
+  links         Link[]
+  contacts      Contact[]
+  events        Event[]
+  contentItems  ContentItem[]
+  templates     Template[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String   @default("#6366f1")
+  createdAt DateTime @default(now())
+
+  tasks        Task[]
+  notes        Note[]
+  links        Link[]
+  contacts     Contact[]
+  events       Event[]
+  contentItems ContentItem[]
+
+  @@map("tags")
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?    @db.Text
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
+  dueDate     DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  creatorId  String
+  creator    User   @relation("TaskCreator", fields: [creatorId], references: [id])
+  assigneeId String?
+  assignee   User?  @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  tags      Tag[]
+  checklist TaskChecklistItem[]
+
+  @@map("tasks")
+}
+
+model TaskChecklistItem {
+  id        String  @id @default(cuid())
+  text      String
+  completed Boolean @default(false)
+  taskId    String
+  task      Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_checklist_items")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.LongText
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  tags   Tag[]
+
+  @@map("notes")
+}
+
+model Link {
+  id          String  @id @default(cuid())
+  title       String
+  url         String  @db.Text
+  category    String  @default("General")
+  description String? @db.Text
+  pinned      Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  tags   Tag[]
+
+  @@map("links")
+}
+
+model Contact {
+  id           String  @id @default(cuid())
+  name         String
+  roleTitle    String?
+  organization String?
+  phone        String?
+  whatsapp     String?
+  email        String?
+  address      String? @db.Text
+  notes        String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  tags   Tag[]
+
+  @@map("contacts")
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  title       String
+  description String?     @db.Text
+  startDate   DateTime
+  endDate     DateTime?
+  location    String?
+  status      EventStatus @default(PLANNING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  picUserId String
+  picUser   User   @relation(fields: [picUserId], references: [id])
+
+  tags      Tag[]
+  checklist EventChecklistItem[]
+  links     EventLink[]
+
+  @@map("events")
+}
+
+model EventChecklistItem {
+  id        String  @id @default(cuid())
+  text      String
+  completed Boolean @default(false)
+  eventId   String
+  event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_checklist_items")
+}
+
+model EventLink {
+  id      String @id @default(cuid())
+  title   String
+  url     String @db.Text
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_links")
+}
+
+model ContentItem {
+  id          String          @id @default(cuid())
+  title       String
+  platform    ContentPlatform @default(INSTAGRAM)
+  plannedDate DateTime?
+  postedDate  DateTime?
+  status      ContentStatus   @default(DRAFT)
+  caption     String?         @db.LongText
+  hashtags    String?         @db.Text
+  assetLinks  String?         @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  tags   Tag[]
+
+  @@map("content_items")
+}
+
+model Hashtag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  category  String   @default("General")
+  createdAt DateTime @default(now())
+
+  @@map("hashtags")
+}
+
+model Template {
+  id        String           @id @default(cuid())
+  title     String
+  category  TemplateCategory @default(OTHER)
+  content   String           @db.LongText
+  variables String?          @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("templates")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String?
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
