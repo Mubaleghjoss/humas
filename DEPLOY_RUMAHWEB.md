@@ -195,6 +195,48 @@ Klik `Restart` pada Node.js App.
 
 Jika `npm install --omit=dev --no-audit --no-fund` masih terkena `Killed`, berarti limit hosting terlalu kecil untuk dependency Node.js. Solusinya perlu naik paket yang support Node.js lebih lega atau deploy ke VPS.
 
+### Fix CloudLinux `node_modules`
+
+Jika muncul error:
+
+```text
+CloudLinux NodeJS Selector demands to store node modules for application in separate folder (virtual environment) pointed by symlink called "node_modules".
+```
+
+Berarti di application root ada folder/file `node_modules` biasa. CloudLinux mengharuskan `node_modules` berupa symlink ke virtual environment.
+
+Jalankan:
+
+```bash
+cd /home/sman5479/public_html/web/humas
+source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate
+
+if [ -L node_modules ]; then
+  rm node_modules
+elif [ -d node_modules ]; then
+  mv node_modules node_modules_broken_$(date +%s)
+fi
+
+mkdir -p /home/sman5479/nodevenv/public_html/web/humas/20/lib/node_modules
+ln -s /home/sman5479/nodevenv/public_html/web/humas/20/lib/node_modules node_modules
+
+ls -ld node_modules
+```
+
+Setelah `node_modules` sudah menjadi symlink, install runtime dependency:
+
+```bash
+npm install --omit=dev --no-audit --no-fund --cache /home/sman5479/tmp/npm-cache
+```
+
+Lalu jalankan Prisma dari binary lokal, bukan auto-install via `npx`:
+
+```bash
+./node_modules/.bin/prisma generate
+```
+
+Jika `./node_modules/.bin/prisma` belum ada, berarti install belum berhasil.
+
 ## Metode Git di Server jika npm ci Tidak Killed
 
 Pakai metode ini hanya jika `npm ci` bisa selesai di server.
