@@ -34,6 +34,10 @@ if (Test-Path $databaseDir) {
 
 Copy-Item -Path (Join-Path $root "DEPLOY_RUMAHWEB.md") -Destination $deployDir -Force
 
+# Rumahweb runs Linux; keep Linux Prisma engines and remove Windows-only engines from the upload.
+Get-ChildItem -Path $deployDir -Recurse -File -Include "query_engine-windows*.node", "*.tmp*" |
+    Remove-Item -Force
+
 if (Test-Path $zipPath) {
     Remove-Item -LiteralPath $zipPath -Force
 }
