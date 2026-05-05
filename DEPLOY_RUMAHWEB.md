@@ -119,7 +119,7 @@ Ok to proceed? (y)
 
 Itu berarti dependency lokal belum terinstall. Jalankan `npm ci` dulu sampai selesai.
 
-## Metode Disarankan untuk Shared Hosting: Upload Runtime Build
+## Metode Disarankan untuk Shared Hosting: Upload Standalone
 
 Jalankan di komputer lokal:
 
@@ -128,13 +128,13 @@ git pull origin main
 npm ci
 npx prisma generate
 npm run build
-npm run pack:rumahweb:runtime
+npm run pack:rumahweb
 ```
 
 Hasil ZIP:
 
 ```text
-.deploy/humas-rumahweb-runtime.zip
+.deploy/humas-rumahweb-standalone.zip
 ```
 
 Upload ZIP itu ke:
@@ -148,10 +148,9 @@ Ekstrak isi ZIP langsung di folder `humas`, sehingga di folder itu ada:
 ```text
 server.js
 package.json
-package-lock.json
+node_modules/
 .next/
 public/
-prisma/
 database/
 ```
 
@@ -164,16 +163,21 @@ Application startup file: server.js
 
 Setelah upload, buat file `.env` di folder `/home/sman5479/public_html/web/humas` atau isi environment variables dari panel Node.js App.
 
-Aktifkan Node.js environment, lalu install dependency runtime saja:
+Jangan jalankan `npm ci`, `npm install`, atau `npm run build` di server untuk metode ini. Dependency dan build sudah dibawa dari lokal.
+
+Karena CloudLinux mengharuskan `node_modules` berupa symlink ke virtual environment, pindahkan folder `node_modules` hasil extract:
 
 ```bash
 source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate
 cd /home/sman5479/public_html/web/humas
-npm install --omit=dev --no-audit --no-fund
-npx --no-install prisma generate
-```
 
-Jangan jalankan `npm run build` di server untuk metode ini. Build sudah dilakukan di lokal.
+rm -rf /home/sman5479/nodevenv/public_html/web/humas/20/lib/node_modules
+mv node_modules /home/sman5479/nodevenv/public_html/web/humas/20/lib/node_modules
+ln -s /home/sman5479/nodevenv/public_html/web/humas/20/lib/node_modules node_modules
+
+ls -ld node_modules
+node -e "require('next/package.json'); require('@prisma/client') ; console.log('runtime ok')"
+```
 
 Untuk database baru, import file ini melalui phpMyAdmin:
 
@@ -193,7 +197,7 @@ Setelah login pertama, langsung ganti password admin.
 
 Klik `Restart` pada Node.js App.
 
-Jika `npm install --omit=dev --no-audit --no-fund` masih terkena `Killed`, berarti limit hosting terlalu kecil untuk dependency Node.js. Solusinya perlu naik paket yang support Node.js lebih lega atau deploy ke VPS.
+Jika aplikasi tetap gagal start setelah metode standalone, cek log Node.js App di cPanel. Pada paket shared hosting tertentu, resource runtime Node.js juga bisa terlalu kecil; solusinya naik paket atau deploy ke VPS.
 
 ### Fix CloudLinux `node_modules`
 
@@ -223,7 +227,7 @@ ln -s /home/sman5479/nodevenv/public_html/web/humas/20/lib/node_modules node_mod
 ls -ld node_modules
 ```
 
-Setelah `node_modules` sudah menjadi symlink, install runtime dependency:
+Untuk metode Git/runtime install, setelah `node_modules` sudah menjadi symlink, install runtime dependency:
 
 ```bash
 npm install --omit=dev --no-audit --no-fund --cache /home/sman5479/tmp/npm-cache
