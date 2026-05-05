@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "pack:rumahweb": "powershell -ExecutionPolicy Bypass -File scripts/pack-rumahweb.ps1",
+    "pack:rumahweb:runtime": "powershell -ExecutionPolicy Bypass -File scripts/pack-rumahweb-runtime.ps1",
     "start": "next start",
     "lint": "eslint",
     "prisma:generate": "npx prisma generate",

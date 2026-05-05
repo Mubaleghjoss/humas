@@ -29,6 +29,14 @@ NODE_ENV="production"
 Di Rumahweb/cPanel, `npm` dan `npx` biasanya tidak tersedia langsung di Terminal global.
 Buat Node.js App dulu, lalu aktifkan environment Node.js dari Terminal.
 
+Jika `npm ci` berhenti dengan:
+
+```text
+Killed
+```
+
+Itu biasanya limit RAM/CPU shared hosting. Jangan dipaksa berulang. Pakai metode `standalone` di bawah: build di komputer lokal, upload ZIP ke server.
+
 Jika muncul error ini:
 
 ```text
@@ -110,6 +118,86 @@ Ok to proceed? (y)
 ```
 
 Itu berarti dependency lokal belum terinstall. Jalankan `npm ci` dulu sampai selesai.
+
+## Metode Disarankan untuk Shared Hosting: Upload Runtime Build
+
+Jalankan di komputer lokal:
+
+```powershell
+git pull origin main
+npm ci
+npx prisma generate
+npm run build
+npm run pack:rumahweb:runtime
+```
+
+Hasil ZIP:
+
+```text
+.deploy/humas-rumahweb-runtime.zip
+```
+
+Upload ZIP itu ke:
+
+```text
+/home/sman5479/public_html/web/humas
+```
+
+Ekstrak isi ZIP langsung di folder `humas`, sehingga di folder itu ada:
+
+```text
+server.js
+package.json
+package-lock.json
+.next/
+public/
+prisma/
+database/
+```
+
+Di cPanel Node.js App:
+
+```text
+Application root: public_html/web/humas
+Application startup file: server.js
+```
+
+Setelah upload, buat file `.env` di folder `/home/sman5479/public_html/web/humas` atau isi environment variables dari panel Node.js App.
+
+Aktifkan Node.js environment, lalu install dependency runtime saja:
+
+```bash
+source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate
+cd /home/sman5479/public_html/web/humas
+npm install --omit=dev --no-audit --no-fund
+npx --no-install prisma generate
+```
+
+Jangan jalankan `npm run build` di server untuk metode ini. Build sudah dilakukan di lokal.
+
+Untuk database baru, import file ini melalui phpMyAdmin:
+
+```text
+/home/sman5479/public_html/web/humas/database/init.sql
+```
+
+File SQL ini membuat tabel dan user awal:
+
+```text
+admin / admin123!
+humas / humas123!
+viewer / viewer123!
+```
+
+Setelah login pertama, langsung ganti password admin.
+
+Klik `Restart` pada Node.js App.
+
+Jika `npm install --omit=dev --no-audit --no-fund` masih terkena `Killed`, berarti limit hosting terlalu kecil untuk dependency Node.js. Solusinya perlu naik paket yang support Node.js lebih lega atau deploy ke VPS.
+
+## Metode Git di Server jika npm ci Tidak Killed
+
+Pakai metode ini hanya jika `npm ci` bisa selesai di server.
 
 ## Deploy Pertama via cPanel Terminal
 
