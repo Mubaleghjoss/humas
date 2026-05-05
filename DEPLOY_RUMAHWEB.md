@@ -143,7 +143,23 @@ Upload ZIP itu ke:
 /home/sman5479/public_html/web/humas
 ```
 
-Ekstrak isi ZIP langsung di folder `humas`, sehingga di folder itu ada:
+Bersihkan hasil deploy/extract lama sebelum extract ulang. Jangan hapus `.env` jika sudah dibuat:
+
+```bash
+cd /home/sman5479/public_html/web/humas
+chmod -R u+w .next node_modules public prisma database 2>/dev/null || true
+rm -rf .next node_modules public prisma database server.js package.json package-lock.json DEPLOY_RUMAHWEB.md
+```
+
+Ekstrak ZIP dari Terminal agar permission lebih konsisten:
+
+```bash
+unzip -o humas-rumahweb-standalone.zip -d /home/sman5479/public_html/web/humas
+```
+
+Jika `unzip` tidak tersedia, baru gunakan tombol `Extract` File Manager setelah folder lama dibersihkan.
+
+Setelah extract, di folder `humas` harus ada:
 
 ```text
 server.js
@@ -315,6 +331,7 @@ Checklist:
 ## Troubleshooting
 
 - `502 Bad Gateway`: cek Node.js App sudah restart, startup file `server.js`, dan build sudah sukses.
+- `Extract Permission denied` pada `.next/node_modules/@prisma`: hapus folder `.next` lama dulu dengan `chmod -R u+w .next && rm -rf .next`, lalu extract ulang via Terminal `unzip`.
 - `npm: command not found`: buat Node.js App dulu lalu jalankan `source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate`.
 - `next: command not found`: dependency belum terinstall; jalankan `npm ci`, lalu cek `ls node_modules/.bin/next`.
 - `npx` meminta install `prisma@...`: dependency lokal belum ada; jalankan `npm ci`, lalu pakai `npx --no-install prisma generate`.
