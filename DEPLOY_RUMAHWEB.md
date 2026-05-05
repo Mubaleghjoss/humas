@@ -59,6 +59,17 @@ NEXTAUTH_URL=https://humas.smaafbs.sch.id
 NODE_ENV=production
 ```
 
+Contoh jika database cPanel bernama `sman5479_humas`:
+
+```text
+DATABASE_URL=mysql://sman5479_USERDB:PASSWORD_DB@localhost:3306/sman5479_humas
+```
+
+Catatan:
+- `DATABASE_URL` tidak boleh hanya `sman5479_humas`; harus format lengkap `mysql://user:password@host:port/database`.
+- `AUTH_SECRET` jangan memakai placeholder `ISI_RANDOM_MINIMAL_32_KARAKTER`; isi string random panjang.
+- Jika password database mengandung karakter khusus seperti `@`, `#`, `%`, `/`, encode dulu di URL.
+
 Setelah app dibuat, cPanel biasanya menampilkan perintah untuk masuk ke virtual environment Node.js, bentuknya mirip:
 
 ```bash
