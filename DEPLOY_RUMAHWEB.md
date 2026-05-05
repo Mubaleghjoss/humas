@@ -257,6 +257,34 @@ Lalu jalankan Prisma dari binary lokal, bukan auto-install via `npx`:
 
 Jika `./node_modules/.bin/prisma` belum ada, berarti install belum berhasil.
 
+### Recovery jika `node_modules` virtualenv rusak
+
+Jika sudah terlanjur menjalankan `rm -rf` dan muncul banyak `Permission denied`, jangan pakai folder virtualenv lama lagi. Buat folder dependency baru dari ZIP standalone:
+
+```bash
+cd /home/sman5479/public_html/web/humas
+source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate
+
+ls -lh humas-rumahweb-standalone.zip
+
+RELEASE="/home/sman5479/nodevenv/public_html/web/humas/20/lib/node_modules_release_$(date +%Y%m%d%H%M%S)"
+mkdir -p "$RELEASE"
+unzip -q humas-rumahweb-standalone.zip "node_modules/*" -d "$RELEASE"
+
+rm -f node_modules
+ln -s "$RELEASE/node_modules" node_modules
+
+ls -ld node_modules
+ls node_modules/next/package.json node_modules/@prisma/client/package.json
+node -e "require('next/package.json'); require('@prisma/client'); console.log('runtime ok')"
+```
+
+Jika command ini berhasil, abaikan folder lama:
+
+```text
+/home/sman5479/nodevenv/public_html/web/humas/20/lib/node_modules
+```
+
 ## Metode Git di Server jika npm ci Tidak Killed
 
 Pakai metode ini hanya jika `npm ci` bisa selesai di server.
