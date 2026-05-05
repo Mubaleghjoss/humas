@@ -101,6 +101,16 @@ npx -v
 
 Kalau ketiganya muncul versi, baru lanjut ke install dan build.
 
+Jika `npx prisma ...` meminta konfirmasi install seperti ini, jangan lanjut dulu:
+
+```text
+Need to install the following packages:
+prisma@...
+Ok to proceed? (y)
+```
+
+Itu berarti dependency lokal belum terinstall. Jalankan `npm ci` dulu sampai selesai.
+
 ## Deploy Pertama via cPanel Terminal
 
 Masuk ke Terminal cPanel/SSH:
@@ -125,8 +135,8 @@ Install dependency dan build:
 
 ```bash
 npm ci
-npx prisma generate
-npx prisma db push
+npx --no-install prisma generate
+npx --no-install prisma db push
 npm run build
 ```
 
@@ -139,8 +149,8 @@ cd /home/sman5479/public_html/web/humas
 source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate
 git pull
 npm ci
-npx prisma generate
-npx prisma db push
+npx --no-install prisma generate
+npx --no-install prisma db push
 npm run build
 ```
 
@@ -172,6 +182,8 @@ Checklist:
 
 - `502 Bad Gateway`: cek Node.js App sudah restart, startup file `server.js`, dan build sudah sukses.
 - `npm: command not found`: buat Node.js App dulu lalu jalankan `source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate`.
+- `next: command not found`: dependency belum terinstall; jalankan `npm ci`, lalu cek `ls node_modules/.bin/next`.
+- `npx` meminta install `prisma@...`: dependency lokal belum ada; jalankan `npm ci`, lalu pakai `npx --no-install prisma generate`.
 - `Database error`: cek `DATABASE_URL`, database MySQL, user, dan privilege.
 - `Module not found`: jalankan `npm ci` dan `npx prisma generate`.
 - Build gagal karena env: pastikan `NEXTAUTH_URL=https://humas.smaafbs.sch.id` tanpa spasi.
