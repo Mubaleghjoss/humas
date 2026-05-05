@@ -137,7 +137,15 @@ Hasil ZIP:
 .deploy/humas-rumahweb-standalone.zip
 ```
 
-Upload ZIP itu ke:
+Script juga membuat paket Linux-native:
+
+```text
+.deploy/humas-rumahweb-standalone.tar.gz
+```
+
+Untuk Rumahweb, lebih disarankan upload file `.tar.gz` karena struktur folder `node_modules` lebih aman saat diextract di Linux/cPanel.
+
+Upload `.tar.gz` itu ke:
 
 ```text
 /home/sman5479/public_html/web/humas
@@ -151,13 +159,17 @@ chmod -R u+w .next node_modules public prisma database 2>/dev/null || true
 rm -rf .next node_modules public prisma database server.js package.json package-lock.json DEPLOY_RUMAHWEB.md
 ```
 
-Ekstrak ZIP dari Terminal agar permission lebih konsisten:
+Ekstrak dari Terminal agar permission lebih konsisten:
+
+```bash
+tar -xzf humas-rumahweb-standalone.tar.gz -C /home/sman5479/public_html/web/humas
+```
+
+Jika memakai ZIP, gunakan:
 
 ```bash
 unzip -o humas-rumahweb-standalone.zip -d /home/sman5479/public_html/web/humas
 ```
-
-Jika `unzip` tidak tersedia, baru gunakan tombol `Extract` File Manager setelah folder lama dibersihkan.
 
 Setelah extract, di folder `humas` harus ada:
 
@@ -265,11 +277,11 @@ Jika sudah terlanjur menjalankan `rm -rf` dan muncul banyak `Permission denied`,
 cd /home/sman5479/public_html/web/humas
 source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate
 
-ls -lh humas-rumahweb-standalone.zip
+ls -lh humas-rumahweb-standalone.tar.gz
 
 RELEASE="/home/sman5479/nodevenv/public_html/web/humas/20/lib/node_modules_release_$(date +%Y%m%d%H%M%S)"
 mkdir -p "$RELEASE"
-unzip -q humas-rumahweb-standalone.zip "node_modules/*" -d "$RELEASE"
+tar -xzf humas-rumahweb-standalone.tar.gz -C "$RELEASE" ./node_modules
 
 rm -f node_modules
 ln -s "$RELEASE/node_modules" node_modules

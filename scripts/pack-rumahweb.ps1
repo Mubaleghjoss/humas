@@ -4,6 +4,7 @@ $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $deployRoot = Join-Path $root ".deploy"
 $deployDir = Join-Path $deployRoot "rumahweb"
 $zipPath = Join-Path $deployRoot "humas-rumahweb-standalone.zip"
+$tarPath = Join-Path $deployRoot "humas-rumahweb-standalone.tar.gz"
 $standaloneDir = Join-Path $root ".next\standalone"
 $staticDir = Join-Path $root ".next\static"
 $publicDir = Join-Path $root "public"
@@ -42,6 +43,12 @@ if (Test-Path $zipPath) {
     Remove-Item -LiteralPath $zipPath -Force
 }
 
+if (Test-Path $tarPath) {
+    Remove-Item -LiteralPath $tarPath -Force
+}
+
 Compress-Archive -Path (Join-Path $deployDir "*") -DestinationPath $zipPath -Force
+tar -czf $tarPath -C $deployDir .
 
 Write-Host "Created $zipPath"
+Write-Host "Created $tarPath"
