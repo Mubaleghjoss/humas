@@ -19,12 +19,19 @@ export function TopLoader() {
     }, [])
 
     useEffect(() => {
-        setProgress(100)
-        const timeout = setTimeout(() => {
-            setLoading(false)
-            setProgress(0)
-        }, 200)
-        return () => clearTimeout(timeout)
+        let timeout: ReturnType<typeof setTimeout>
+        const frame = requestAnimationFrame(() => {
+            setProgress(100)
+            timeout = setTimeout(() => {
+                setLoading(false)
+                setProgress(0)
+            }, 200)
+        })
+
+        return () => {
+            cancelAnimationFrame(frame)
+            clearTimeout(timeout)
+        }
     }, [pathname, searchParams])
 
     // Intercept link clicks to show loader immediately

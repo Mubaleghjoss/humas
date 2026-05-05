@@ -67,8 +67,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tasks         Task[]          @relation("TaskCreator")
-  assignedTasks Task[]          @relation("TaskAssignee")
+  tasks         Task[]        @relation("TaskCreator")
+  assignedTasks Task[]        @relation("TaskAssignee")
   notes         Note[]
   links         Link[]
   contacts      Contact[]
@@ -77,6 +77,8 @@ model User {
   templates     Template[]
   auditLogs     AuditLog[]
 
+  @@index([active, role])
+  @@index([createdAt])
   @@map("users")
 }
 
@@ -93,6 +95,7 @@ model Tag {
   events       Event[]
   contentItems ContentItem[]
 
+  @@index([createdAt])
   @@map("tags")
 }
 
@@ -107,13 +110,17 @@ model Task {
   updatedAt   DateTime   @updatedAt
 
   creatorId  String
-  creator    User   @relation("TaskCreator", fields: [creatorId], references: [id])
+  creator    User    @relation("TaskCreator", fields: [creatorId], references: [id])
   assigneeId String?
-  assignee   User?  @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  assignee   User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
 
   tags      Tag[]
   checklist TaskChecklistItem[]
 
+  @@index([status, dueDate])
+  @@index([priority, dueDate])
+  @@index([dueDate])
+  @@index([updatedAt])
   @@map("tasks")
 }
 
@@ -139,6 +146,8 @@ model Note {
   user   User   @relation(fields: [userId], references: [id])
   tags   Tag[]
 
+  @@index([pinned, updatedAt])
+  @@index([updatedAt])
   @@map("notes")
 }
 
@@ -157,6 +166,8 @@ model Link {
   user   User   @relation(fields: [userId], references: [id])
   tags   Tag[]
 
+  @@index([pinned, updatedAt])
+  @@index([category, updatedAt])
   @@map("links")
 }
 
@@ -178,6 +189,8 @@ model Contact {
   user   User   @relation(fields: [userId], references: [id])
   tags   Tag[]
 
+  @@index([name])
+  @@index([organization])
   @@map("contacts")
 }
 
@@ -200,6 +213,8 @@ model Event {
   checklist EventChecklistItem[]
   links     EventLink[]
 
+  @@index([startDate])
+  @@index([status, startDate])
   @@map("events")
 }
 
@@ -241,6 +256,10 @@ model ContentItem {
   user   User   @relation(fields: [userId], references: [id])
   tags   Tag[]
 
+  @@index([status, plannedDate])
+  @@index([platform, plannedDate])
+  @@index([plannedDate])
+  @@index([postedDate])
   @@map("content_items")
 }
 
@@ -250,6 +269,7 @@ model Hashtag {
   category  String   @default("General")
   createdAt DateTime @default(now())
 
+  @@index([category])
   @@map("hashtags")
 }
 
@@ -266,6 +286,8 @@ model Template {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
+  @@index([category, updatedAt])
+  @@index([updatedAt])
   @@map("templates")
 }
 
@@ -280,5 +302,8 @@ model AuditLog {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([entity, entityId])
   @@map("audit_logs")
 }

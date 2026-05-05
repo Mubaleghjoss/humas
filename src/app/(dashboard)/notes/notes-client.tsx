@@ -16,9 +16,72 @@ import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
 import { marked } from "marked"
 
+type TagOption = {
+    id: string
+    name: string
+    color: string
+}
+
+type NoteItem = {
+    id: string
+    title: string
+    content: string
+    pinned: boolean
+    updatedAt: Date | string
+    tags: TagOption[]
+}
+
 interface Props {
-    initialNotes: any[]
-    tags: any[]
+    initialNotes: NoteItem[]
+    tags: TagOption[]
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+    return error instanceof Error ? error.message : fallback
+}
+
+function sanitizeHtmlString(html: string) {
+    return html
+        .replace(/<\s*(script|style|iframe|object|embed|form|input|button|textarea|select|option|meta|link)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+        .replace(/<\s*(script|style|iframe|object|embed|form|input|button|textarea|select|option|meta|link)\b[^>]*\/?>/gi, "")
+        .replace(/\son\w+=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+        .replace(/\s(style|srcdoc)=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+        .replace(/\s(href|src)=("|\')\s*(javascript:|data:text\/html)[^"\']*\2/gi, "")
+        .replace(/\s(href|src)=\s*(javascript:|data:text\/html)[^\s>]*/gi, "")
+}
+
+function renderSafeMarkdown(markdown: string) {
+    const html = sanitizeHtmlString(marked.parse(markdown, { async: false }) as string)
+    if (typeof document === "undefined") return html
+
+    const template = document.createElement("template")
+    template.innerHTML = html
+
+    template.content
+        .querySelectorAll("script,style,iframe,object,embed,form,input,button,textarea,select,option,meta,link")
+        .forEach((element) => element.remove())
+
+    template.content.querySelectorAll("*").forEach((element) => {
+        Array.from(element.attributes).forEach((attribute) => {
+            const name = attribute.name.toLowerCase()
+            const value = attribute.value.trim().replace(/\s+/g, "").toLowerCase()
+
+            if (name.startsWith("on") || name === "style" || name === "srcdoc") {
+                element.removeAttribute(attribute.name)
+                return
+            }
+
+            if ((name === "href" || name === "src") && value.includes(":") && !/^(https?:|mailto:|tel:)/.test(value)) {
+                element.removeAttribute(attribute.name)
+            }
+        })
+
+        if (element.tagName === "A") {
+            element.setAttribute("rel", "noopener noreferrer")
+        }
+    })
+
+    return template.innerHTML
 }
 
 export function NotesClient({ initialNotes, tags }: Props) {
@@ -26,8 +89,8 @@ export function NotesClient({ initialNotes, tags }: Props) {
     const isViewer = session?.user?.role === "VIEWER"
     const [search, setSearch] = useState("")
     const [dialogOpen, setDialogOpen] = useState(false)
-    const [editingNote, setEditingNote] = useState<any>(null)
-    const [previewNote, setPreviewNote] = useState<any>(null)
+    const [editingNote, setEditingNote] = useState<NoteItem | null>(null)
+    const [previewNote, setPreviewNote] = useState<NoteItem | null>(null)
     const [loading, setLoading] = useState(false)
     const [editorContent, setEditorContent] = useState("")
 
@@ -50,8 +113,8 @@ export function NotesClient({ initialNotes, tags }: Props) {
             }
             setDialogOpen(false)
             setEditingNote(null)
-        } catch (err: any) {
-            toast.error(err.message || "Gagal menyimpan")
+        } catch (err: unknown) {
+            toast.error(getErrorMessage(err, "Gagal menyimpan"))
         }
         setLoading(false)
     }
@@ -113,7 +176,7 @@ export function NotesClient({ initialNotes, tags }: Props) {
                                 <p className="text-xs text-muted-foreground line-clamp-4 mb-3">{note.content.replace(/[#*_\[\]`>]/g, '').slice(0, 200)}</p>
                                 <div className="flex items-center justify-between">
                                     <div className="flex gap-1">
-                                        {note.tags.map((tag: any) => (
+                                        {note.tags.map((tag) => (
                                             <span key={tag.id} style={{ backgroundColor: tag.color + "20", color: tag.color }} className="text-[10px] px-1.5 py-0.5 rounded-full font-medium">{tag.name}</span>
                                         ))}
                                     </div>
@@ -137,7 +200,7 @@ export function NotesClient({ initialNotes, tags }: Props) {
                             Terakhir diubah: {formatDate(previewNote?.updatedAt)}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="prose-preview text-sm max-h-[60vh] overflow-y-auto" dangerouslySetInnerHTML={{ __html: previewNote ? marked(previewNote.content) as string : "" }} />
+                    <div className="prose-preview text-sm max-h-[60vh] overflow-y-auto" dangerouslySetInnerHTML={{ __html: previewNote ? renderSafeMarkdown(previewNote.content) : "" }} />
                 </DialogContent>
             </Dialog>
 
@@ -162,7 +225,7 @@ export function NotesClient({ initialNotes, tags }: Props) {
                                 <Textarea name="content" value={editorContent} onChange={(e) => setEditorContent(e.target.value)} rows={12} placeholder="Tulis catatan dengan format Markdown..." className="font-mono text-sm" required />
                             </TabsContent>
                             <TabsContent value="preview">
-                                <div className="prose-preview text-sm border rounded-lg p-4 min-h-[200px] max-h-[400px] overflow-y-auto" dangerouslySetInnerHTML={{ __html: marked(editorContent) as string }} />
+                                <div className="prose-preview text-sm border rounded-lg p-4 min-h-[200px] max-h-[400px] overflow-y-auto" dangerouslySetInnerHTML={{ __html: renderSafeMarkdown(editorContent) }} />
                                 <input type="hidden" name="content" value={editorContent} />
                             </TabsContent>
                         </Tabs>
@@ -175,9 +238,9 @@ export function NotesClient({ initialNotes, tags }: Props) {
                         <div className="space-y-2">
                             <Label>Tags</Label>
                             <div className="flex flex-wrap gap-2">
-                                {tags.map((tag: any) => (
+                                {tags.map((tag) => (
                                     <label key={tag.id} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                                        <input type="checkbox" name="tags" value={tag.id} defaultChecked={editingNote?.tags?.some((t: any) => t.id === tag.id)} className="rounded" />
+                                        <input type="checkbox" name="tags" value={tag.id} defaultChecked={editingNote?.tags?.some((t) => t.id === tag.id)} className="rounded" />
                                         <span style={{ color: tag.color }}>{tag.name}</span>
                                     </label>
                                 ))}
