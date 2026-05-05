@@ -24,32 +24,23 @@ NEXTAUTH_URL="https://humas.smaafbs.sch.id"
 NODE_ENV="production"
 ```
 
-## Deploy Pertama via cPanel Terminal
+## Urutan Deploy yang Benar
 
-Masuk ke Terminal cPanel/SSH:
+Di Rumahweb/cPanel, `npm` dan `npx` biasanya tidak tersedia langsung di Terminal global.
+Buat Node.js App dulu, lalu aktifkan environment Node.js dari Terminal.
 
-```bash
-cd /home/sman5479/public_html/web
+Jika muncul error ini:
 
-# Jika folder humas belum ada
-git clone https://github.com/Mubaleghjoss/humas.git humas
-cd humas
+```text
+bash: npm: command not found
+bash: npx: command not found
 ```
 
-Jika folder `humas` sudah ada dan berisi file lama, backup dulu sebelum clone/pull.
-
-Install dependency dan build:
-
-```bash
-npm ci
-npx prisma generate
-npx prisma db push
-npm run build
-```
+Artinya environment Node.js belum aktif, atau fitur Node.js App belum tersedia di paket hosting.
 
 ## Setup Node.js App di cPanel
 
-Isi konfigurasi Node.js App:
+Buka cPanel -> `Setup Node.js App`, lalu buat aplikasi:
 
 ```text
 Node.js version: 20+ atau yang paling baru tersedia
@@ -68,12 +59,73 @@ NEXTAUTH_URL=https://humas.smaafbs.sch.id
 NODE_ENV=production
 ```
 
+Setelah app dibuat, cPanel biasanya menampilkan perintah untuk masuk ke virtual environment Node.js, bentuknya mirip:
+
+```bash
+source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate
+cd /home/sman5479/public_html/web/humas
+```
+
+Angka `20` bisa berbeda sesuai versi Node.js yang dipilih. Pakai perintah yang ditampilkan oleh cPanel.
+
+Jika tidak terlihat, coba cari manual:
+
+```bash
+find /home/sman5479/nodevenv -path "*/public_html/web/humas/*/bin/activate" -print
+```
+
+Lalu aktifkan file `activate` yang ditemukan:
+
+```bash
+source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate
+```
+
+Cek setelah aktif:
+
+```bash
+node -v
+npm -v
+npx -v
+```
+
+Kalau ketiganya muncul versi, baru lanjut ke install dan build.
+
+## Deploy Pertama via cPanel Terminal
+
+Masuk ke Terminal cPanel/SSH:
+
+```bash
+cd /home/sman5479/public_html/web
+
+# Jika folder humas belum ada
+git clone https://github.com/Mubaleghjoss/humas.git humas
+cd humas
+```
+
+Jika folder `humas` sudah ada dan berisi file lama, backup dulu sebelum clone/pull.
+
+Aktifkan Node.js environment dari cPanel:
+
+```bash
+source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate
+```
+
+Install dependency dan build:
+
+```bash
+npm ci
+npx prisma generate
+npx prisma db push
+npm run build
+```
+
 Klik `Restart` pada Node.js App.
 
 ## Update Deploy Berikutnya
 
 ```bash
 cd /home/sman5479/public_html/web/humas
+source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate
 git pull
 npm ci
 npx prisma generate
@@ -108,6 +160,7 @@ Checklist:
 ## Troubleshooting
 
 - `502 Bad Gateway`: cek Node.js App sudah restart, startup file `server.js`, dan build sudah sukses.
+- `npm: command not found`: buat Node.js App dulu lalu jalankan `source /home/sman5479/nodevenv/public_html/web/humas/20/bin/activate`.
 - `Database error`: cek `DATABASE_URL`, database MySQL, user, dan privilege.
 - `Module not found`: jalankan `npm ci` dan `npx prisma generate`.
 - Build gagal karena env: pastikan `NEXTAUTH_URL=https://humas.smaafbs.sch.id` tanpa spasi.
